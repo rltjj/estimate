@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
+$pdo = Database::getInstance();
+
 $data = json_decode(file_get_contents('php://input'), true);
 
 $company_name = $data['company_name'];

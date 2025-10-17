@@ -78,26 +78,28 @@
     <script>
         fetch('/estimate/app/controllers/get_products.php')
             .then(res => res.json())
-            .then(products => {
-                const tbody = document.querySelector('#productsTable tbody');
-                tbody.innerHTML = '';
+            .then(response => {
+                if (response.status === 'success') {
+                    const products = response.data;
+                    const tbody = document.querySelector('#productsTable tbody');
+                    tbody.innerHTML = '';
 
-                products.forEach(p => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-            <td>
-              ${p.id}
-              <input type="hidden" name="id[]" value="${p.id}">
-            </td>
-            <td><input type="text" name="name[]" value="${p.name}"></td>
-            <td><input type="number" name="price[]" value="${p.price}"></td>
-            <td><textarea name="description[]">${p.description ?? ''}</textarea></td>
-            <td><a href="/estimate/app/controllers/admin_products.php?delete=${p.id}" class="btn" onclick="return confirm('삭제하시겠습니까?')">삭제</a></td>
-          `;
-                    tbody.appendChild(row);
-                });
+                    products.forEach(p => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+          <td>${p.id}<input type="hidden" name="id[]" value="${p.id}"></td>
+          <td><input type="text" name="name[]" value="${p.name}"></td>
+          <td><input type="number" name="price[]" value="${p.price}"></td>
+          <td><textarea name="description[]">${p.description ?? ''}</textarea></td>
+          <td><a href="/estimate/app/controllers/admin_products.php?delete=${p.id}" class="btn" onclick="return confirm('삭제하시겠습니까?')">삭제</a></td>
+        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    console.error('상품 불러오기 실패:', response.message);
+                }
             })
-            .catch(err => console.error('상품 불러오기 실패:', err));
+            .catch(err => console.error('상품 fetch 실패:', err));
     </script>
 </body>
 

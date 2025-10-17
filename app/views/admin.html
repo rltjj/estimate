@@ -51,7 +51,7 @@
       "FAILED": '실패'
     };
 
-    fetch('/estimate/app/controllers/get_applications_admin.php')
+    fetch('/estimate/app/controllers/get_applications.php')
       .then(res => res.json())
       .then(applications => {
         tbody.innerHTML = "";
@@ -62,7 +62,7 @@
             <td>${app.company || '-'}</td>
             <td>${app.date}</td>
             <td>${statusMap[app.state] || app.state}</td>
-            <td><button data-id="${app.id}">상세보기</button></td>
+            <td><button data-id="${app.application_id}">상세보기</button></td>
           `;
           tbody.appendChild(tr);
         });

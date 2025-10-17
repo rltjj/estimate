@@ -35,64 +35,69 @@ document.addEventListener('DOMContentLoaded', () => {
   // DB에서 상품 불러오기
   fetch('/estimate/app/controllers/get_products.php')
     .then(res => res.json())
-    .then(products => {
-      ITEMS = products.map(p => ({
-        id: String(p.id),
-        label: p.name,
-        price: parseInt(p.price || 0),
-        description: p.description || '-'
-      }));
-      state.items = JSON.parse(JSON.stringify(ITEMS));
+    .then(response => {
+      if (response.status === 'success') {
+        ITEMS = response.data.map(p => ({
+          id: String(p.id),
+          label: p.name,
+          price: parseInt(p.price || 0),
+          description: p.description || '-'
+        }));
+        state.items = JSON.parse(JSON.stringify(ITEMS));
 
-      if (applicationId) {
-        fetch(`/estimate/app/controllers/get_application_detail.php?id=${applicationId}`)
-          .then(res => res.json())
-          .then(data => {
-            const application = data.application || {};
-            const selectedProducts = data.products || [];
+        if (applicationId) {
+          fetch(`/estimate/app/controllers/get_application_detail.php?id=${applicationId}`)
+            .then(res => res.json())
+            .then(data => {
+              const application = data.application || {};
+              const selectedProducts = data.products || [];
 
-            companyNameInput.value = application.company_name || '';
-            managerInput.value = application.user_name || '';
-            phoneInput.value = application.phone || '';
+              companyNameInput.value = application.company_name || '';
+              managerInput.value = application.user_name || '';
+              phoneInput.value = application.phone || '';
 
-            selectedProducts.forEach(sel => {
-              const idStr = String(sel.product_id);
-              state.selections[idStr] = { qty: sel.quantity, price: sel.price };
+              selectedProducts.forEach(sel => {
+                const idStr = String(sel.product_id);
+                state.selections[idStr] = { qty: sel.quantity, price: sel.price };
+              });
+
+              ['18', '19'].forEach(id => {
+                const idStr = String(id);
+                if (!state.selections[idStr]) {
+                  const item = state.items.find(i => i.id === idStr);
+                  if (item) state.selections[idStr] = { qty: 1, price: item.price };
+                }
+              });
+
+              renderChecklist();
+              renderPricingEditor();
+              updateSummary();
+            })
+            .catch(() => {
+              ['18', '19'].forEach(id => {
+                const item = state.items.find(i => i.id === String(id));
+                if (item) state.selections[item.id] = { qty: 1, price: item.price };
+              });
+              renderChecklist();
+              renderPricingEditor();
+              updateSummary();
             });
-
-            // 필수항목 추가
-            ['18', '19'].forEach(id => {
-              const idStr = String(id);
-              if (!state.selections[idStr]) {
-                const item = state.items.find(i => i.id === idStr);
-                if (item) state.selections[idStr] = { qty: 1, price: item.price };
-              }
-            });
-
-            renderChecklist();
-            renderPricingEditor();
-            updateSummary();
-          })
-          .catch(() => {
-            ['18', '19'].forEach(id => {
-              const item = state.items.find(i => i.id === String(id));
-              if (item) state.selections[item.id] = { qty: 1, price: item.price };
-            });
-            renderChecklist();
-            renderPricingEditor();
-            updateSummary();
+        } else {
+          // 새 견적: 필수항목만 체크
+          ['18', '19'].forEach(id => {
+            const item = state.items.find(i => i.id === String(id));
+            if (item) state.selections[item.id] = { qty: 1, price: item.price };
           });
+          renderChecklist();
+          renderPricingEditor();
+          updateSummary();
+        }
       } else {
-        // 새 견적: 필수항목만 체크
-        ['18', '19'].forEach(id => {
-          const item = state.items.find(i => i.id === String(id));
-          if (item) state.selections[item.id] = { qty: 1, price: item.price };
-        });
-        renderChecklist();
-        renderPricingEditor();
-        updateSummary();
+        console.error('상품 불러오기 실패:', response.message);
       }
-    });
+    })
+    .catch(err => console.error('상품 fetch 실패:', err));
+
 
   function renderChecklist() {
     checklistEl.innerHTML = '';

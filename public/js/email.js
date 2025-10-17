@@ -22,7 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fetch('/estimate/app/controllers/get_products.php')
     .then(res => res.json())
-    .then(products => {
+    .then(result => {
+      if (result.status !== 'success' || !Array.isArray(result.data)) {
+        throw new Error('get_products.php가 잘못된 형식의 데이터를 반환함');
+      }
+
+      const products = result.data;
       ITEMS = products.map(p => ({
         id: String(p.id),
         label: p.name,
@@ -31,10 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }));
       state.items = JSON.parse(JSON.stringify(ITEMS));
 
-      return fetch(`/estimate/app/controllers/get_application_detail.php?id=${applicationId}`);
+      return fetch(`/estimate/app/controllers/get_application_detail.php?estimateId=${applicationId}`);
     })
     .then(res => res.json())
     .then(data => {
+      if (data.error) throw new Error(data.error);
+
       const application = data.application || {};
       const selectedProducts = data.products || [];
 
@@ -48,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selections[idStr] = { qty: sel.quantity, price: sel.price };
       });
 
-      ['18','19'].forEach(id => {
+      ['18', '19'].forEach(id => {
         if (!state.selections[id]) {
           const item = state.items.find(i => i.id === id);
           if (item) state.selections[id] = { qty: 1, price: item.price };
@@ -118,11 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pdfBlob = await html2pdf()
         .set({
-          margin: [5,5,5,5],
+          margin: [5, 5, 5, 5],
           filename: `${companyName}_${estimateNumber}.pdf`,
-          image: { type:'jpeg', quality:0.96 },
-          html2canvas: { scale:2, useCORS:true },
-          jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+          image: { type: 'jpeg', quality: 0.96 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         })
         .from(html)
         .outputPdf('blob');
@@ -135,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('managerPhone', managerPhone);
       formData.append('pdf', pdfBlob, `${companyName}_${estimateNumber}.pdf`);
 
-      const res = await fetch('/estimate/app/controllers/send_estimate_email.php', { method:'POST', body: formData });
+      const res = await fetch('/estimate/app/controllers/send_estimate_email.php', { method: 'POST', body: formData });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || '알 수 없는 오류');
 
@@ -147,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       a.click();
       URL.revokeObjectURL(a.href);
 
-    } catch(err) {
+    } catch (err) {
       console.error(err);
       alert('이메일 발송 중 오류가 발생했습니다: ' + err.message);
     }

@@ -2,12 +2,19 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../bootstrap.php';
 
-if (!isset($_GET['id'])) {
-    echo json_encode(['error' => 'ID가 없습니다.']);
+$pdo = Database::getInstance();
+
+$response = ['application' => null, 'products' => []];
+
+$appId = $_GET['id'] ?? $_GET['estimateId'] ?? null;
+
+if (!$appId) {
+    $response['error'] = 'ID가 없습니다.';
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$appId = intval($_GET['id']);
+$appId = intval($appId);
 
 try {
     $stmt = $pdo->prepare("
@@ -19,6 +26,12 @@ try {
     $stmt->execute(['id' => $appId]);
     $application = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    if (!$application) {
+        $response['error'] = '해당 ID의 신청 내역이 없습니다.';
+        echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $stmt2 = $pdo->prepare("
         SELECT ap.product_id, p.name, ap.quantity, ap.price
         FROM application_products ap
@@ -28,11 +41,10 @@ try {
     $stmt2->execute(['id' => $appId]);
     $products = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode([
-        'application' => $application,
-        'products' => $products
-    ]);
-
+    $response['application'] = $application;
+    $response['products'] = $products ?: [];
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (PDOException $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    $response['error'] = $e->getMessage();
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
 }
