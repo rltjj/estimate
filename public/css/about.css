@@ -28,7 +28,7 @@ html {
     padding: 0;
     font-family: 'KoPubWorldDotum', sans-serif;
 }
-
+/* 
 header {
     top: 0;
     width: 100%;
@@ -152,7 +152,7 @@ header nav.container {
     .hamburger {
         display: block !important;
     }
-}
+} */
 
 #int {
     width: 100%;
@@ -202,7 +202,7 @@ header nav.container {
 
 main {
     background-color: white;
-    padding: 100px 20%;
+    padding: 100px 10%;
 }
 
 .section-title {
